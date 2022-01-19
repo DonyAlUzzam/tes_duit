@@ -98,7 +98,7 @@ app.get('/:order', function (req, res) {
 });
 
 app.post('/callback', function (req, res) {
-    console.log(req.bodyParse);
+    console.log(req.body);
     res.send("OK");
 
 });
