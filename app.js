@@ -3,6 +3,8 @@ var axios = require('axios');
 var md5 = require('md5');
 
 var app = express();
+app.use(express.json());
+
 app.get('/:order', function (req, res) {
     orderID = req.params.order
     merchantCode = "D11056"
@@ -89,11 +91,10 @@ app.get('/:order', function (req, res) {
 });
 
 app.post('/callback', function (req, res) {
-    console.log(req.body);
+    console.log(req.bodyParse);
     res.send("OK");
 
 });
-
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
