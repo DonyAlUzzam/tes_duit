@@ -12,7 +12,7 @@ app.use(express.urlencoded({extended: true}))
 // app.use(bodyParser);
 
 
-app.get('/:order', function (req, res) {
+app.get('/order/:order', function (req, res) {
     orderID = req.params.order
     merchantCode = "D11056"
     amount = 20000
@@ -84,6 +84,7 @@ app.get('/:order', function (req, res) {
 
     axios(config)
     .then(function (response) {
+        console.log()
         console.log(JSON.stringify(response.data)); 
         // console.log(response);
         // res.send(JSON.stringify(response.data));
