@@ -3,7 +3,7 @@ var axios = require('axios');
 var md5 = require('md5');
 
 var app = express();
-app.use(express.json());
+app.use(express.bodyParser());
 
 app.get('/:order', function (req, res) {
     orderID = req.params.order
