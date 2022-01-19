@@ -1,9 +1,14 @@
 var express = require('express');
 var axios = require('axios');
 var md5 = require('md5');
+const bodyParser = require('body-parser');
+
 
 var app = express();
-app.use(express.bodyParser());
+// app.use(express.bodyParser());
+
+app.use(bodyParser);
+
 
 app.get('/:order', function (req, res) {
     orderID = req.params.order
