@@ -6,8 +6,10 @@ const bodyParser = require('body-parser');
 
 var app = express();
 // app.use(express.bodyParser());
+app.use(express.json())
+app.use(express.urlencoded({extended: true}))
 
-app.use(bodyParser);
+// app.use(bodyParser);
 
 
 app.get('/:order', function (req, res) {
