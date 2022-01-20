@@ -19,6 +19,13 @@ app.get('/order', function (req, res) {
     merchantCode = "D11056"
     amount = 10000
     redirectUrl = req.query.redirecturl
+    paymenttypeid = req.query.paymenttypeid
+    userid = req.query.userid
+    usertype = req.query.usertype
+    transactiontype = req.query.transactiontype
+    invoiceids = req.query.invoiceids
+    debitnoteids = req.query.debitnoteids
+    description = req.query.description
     sellingcurrencyamount = req.query.sellingcurrencyamount
     accountingcurrencyamount = req.query.accountingcurrencyamount
     merchantKey = "a642ae14aaa19a3527fc54b5153a6bf9"
@@ -29,7 +36,14 @@ app.get('/order', function (req, res) {
         "redirectUrl" : redirectUrl,
         "checksum" : checksum,
         "sellingcurrencyamount" : sellingcurrencyamount,
-        "accountingcurrencyamount" : accountingcurrencyamount
+        "accountingcurrencyamount" : accountingcurrencyamount,
+        "paymenttypeid" : paymenttypeid,
+        "userid" : userid,
+        "usertype" : usertype,
+        "transactiontype" : transactiontype,
+        "invoiceids" : invoiceids,
+        "debitnoteids" : debitnoteids,
+        "description" : description,
 
     }]
     // $checksum =generateChecksum($transId,$sellingCurrencyAmount,$accountingCurrencyAmount,$status, $rkey,$key);
@@ -77,7 +91,7 @@ app.get('/order', function (req, res) {
                   "countryCode":"ID"
                }
             },
-            "callbackUrl":"https://d893-159-223-92-241.ngrok.io/callback",
+            "callbackUrl":"https://e1f8-103-124-197-154.ngrok.io/callback",
             "returnUrl":"https://enu2xycs1fwjh5t.m.pipedream.net",
             "signature":signature,
             "expiryPeriod":5
@@ -123,57 +137,102 @@ app.post('/callback', function (req, res) {
         status = 'P'
     }
     let statuss = status
-    let rkey = (Math.random() + 1).toString(36).substring(7);
+    let rkey = Math.floor(Math.random() * 10000000000);
+    console.log(rkey, 'nah dek')
     let key = "WeEY0Qg4rEGe1jTvDiyoozyCx8vHl7ZQ";
 
-
+    paymenttypeid = data.paymenttypeid
+    userid = data.userid
+    usertype = data.usertype
+    transactiontype = data.transactiontype
+    invoiceids = data.invoiceids
+    debitnoteids = data.debitnoteids
+    description = data.description
+    sellingcurrencyamount = data.sellingcurrencyamount
+    accountingcurrencyamount = data.accountingcurrencyamount
+    checksum = data.checksum
 
     // console.log(rkey, 'key');
 
-    // let checksums = data.checksum
-    let sellingamount = data.sellingcurrencyamount
-    let accountingamount = data.accountingcurrencyamount
+    // let checksum = md5(transid+'|'+sellingamount+'|'+accountingamount+'|'+statuss+'|'+rkey+'|'+key);
 
-    let checksum = md5(transid+'|'+sellingamount+'|'+accountingamount+'|'+statuss+'|'+rkey+'|'+key);
+    if(verifycheckSum(paymenttypeid,transid,userid,usertype,transactiontype,invoiceids,debitnoteids,description,sellingcurrencyamount,accountingcurrencyamount,key,checksum)){
 
-    console.log(checksum, 'cek')
-
-    var datas = JSON.stringify(
-        {
-            "transid":transid,
-            "status":statuss,
-            "rkey":rkey,
-            "checksum":checksum,
-            "sellingamount":sellingamount,
-            "accountingamount":accountingamount,
-         }
-    );
-
-    var config = {
-        method: 'post',
-        url: data.redirectUrl,
-        headers: { 
-            'Content-Type': 'application/json'
-        },
-        data : datas
-        };
-    
-        axios(config)
-        .then(function (response) {
-            console.log(response)
-            // console.log(JSON.stringify(response.data)); 
-            // console.log(response);
-            // res.send(JSON.stringify(response.data));
-            // res.redirect(response.data.paymentUrl)
-    
+        console.log('true')
+        cek = generateChecksum(transid,sellingcurrencyamount,accountingcurrencyamount,status,rkey,key).then(checksums=>{
+            var datas = JSON.stringify(
+                {
+                    "transid":transid,
+                    "status":statuss,
+                    "rkey":rkey,
+                    "checksum":checksums,
+                    "sellingamount":sellingcurrencyamount,
+                    "accountingamount":accountingcurrencyamount,
+                 }
+            );
+        
+            var config = {
+                method: 'post',
+                url: data.redirectUrl,
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                data : datas
+                };
+            
+                axios(config)
+                .then(function (response) {
+                    console.log(response)
+                    // console.log(JSON.stringify(response.data)); 
+                    // console.log(response);
+                    // res.send(JSON.stringify(response.data));
+                    // res.redirect(response.data.paymentUrl)
+            
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    res.send("Error");
+                });
+        
+            res.send("OK");
         })
-        .catch(function (error) {
-            console.log(error);
-            res.send("Error");
-        });
+        
+        
+    }else{
+        console.log('false')
+    }
 
-    res.send("OK");
+   
 });
+
+var verifycheckSum = async function (paymenttypeid,transid,userid,usertype,transactiontype,invoiceids,debitnoteids,description,sellingcurrencyamount,accountingcurrencyamount,key,checksum) {
+	
+    var str = paymenttypeid+'|'+transid+'|'+userid+'|'+usertype+'|'+transactiontype+'|'+invoiceids+'|'+debitnoteids+'|'+description+'|'+sellingcurrencyamount+'|'+accountingcurrencyamount+'|'+key
+  
+  console.log(str, 'str') 
+
+   var generatedCheckSum = md5(str);
+
+   console.log(generatedCheckSum, "generate")
+   console.log(checksum, "ceksum")
+
+
+    if(generatedCheckSum == checksum)
+			return true ;
+		else
+			return false ;
+}
+
+var generateChecksum = async function (transid,sellingcurrencyamount,accountingcurrencyamount,status,rkey,key) {
+	
+    var str = transid+'|'+sellingcurrencyamount+'|'+accountingcurrencyamount+'|'+status+'|'+rkey+'|'+key
+  
+    var generatedCheckSum = md5(str);
+
+   return generatedCheckSum;
+}
+
+
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
