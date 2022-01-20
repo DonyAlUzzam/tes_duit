@@ -2,6 +2,7 @@ var express = require('express');
 var axios = require('axios');
 var md5 = require('md5');
 const bodyParser = require('body-parser');
+const { json } = require('body-parser');
 
 
 var app = express();
@@ -12,12 +13,27 @@ app.use(express.urlencoded({extended: true}))
 // app.use(bodyParser);
 
 
-app.get('/order/:order', function (req, res) {
-    orderID = req.params.order
+app.get('/order', function (req, res) {
+    console.log(req.query.transid, 'tes')
+    orderID = req.query.transid
     merchantCode = "D11056"
-    amount = 20000
+    amount = 10000
+    redirectUrl = req.query.redirecturl
+    sellingcurrencyamount = req.query.sellingcurrencyamount
+    accountingcurrencyamount = req.query.accountingcurrencyamount
     merchantKey = "a642ae14aaa19a3527fc54b5153a6bf9"
     var signature = md5(merchantCode+orderID+amount+merchantKey)
+    var checksum = req.query.checksum
+
+    addParams = [{
+        "redirectUrl" : redirectUrl,
+        "checksum" : checksum,
+        "sellingcurrencyamount" : sellingcurrencyamount,
+        "accountingcurrencyamount" : accountingcurrencyamount
+
+    }]
+    // $checksum =generateChecksum($transId,$sellingCurrencyAmount,$accountingCurrencyAmount,$status, $rkey,$key);
+
     var data = JSON.stringify(
         {
             "merchantCode":merchantCode,
@@ -25,7 +41,7 @@ app.get('/order/:order', function (req, res) {
             "paymentMethod":"BT",
             "merchantOrderId":orderID,
             "productDetails":"Tes pembayaran menggunakan Duitku",
-            "additionalParam":"",
+            "additionalParam":JSON.stringify(addParams),
             "merchantUserInfo":"",
             "customerVaName":"John Doe",
             "email":"test@test.com",
@@ -35,11 +51,6 @@ app.get('/order/:order', function (req, res) {
                   "name":"Test Item 1",
                   "price":10000,
                   "quantity":1
-               },
-               {
-                  "name":"Test Item 2",
-                  "price":10000,
-                  "quantity":3
                }
             ],
             "customerDetail":{
@@ -66,7 +77,7 @@ app.get('/order/:order', function (req, res) {
                   "countryCode":"ID"
                }
             },
-            "callbackUrl":"http://188.166.207.49:3000/callback",
+            "callbackUrl":"https://f097-103-124-197-154.ngrok.io/callback",
             "returnUrl":"https://enu2xycs1fwjh5t.m.pipedream.net",
             "signature":signature,
             "expiryPeriod":5
@@ -100,8 +111,68 @@ app.get('/order/:order', function (req, res) {
 
 app.post('/callback', function (req, res) {
     console.log(req.body);
-    res.send("OK");
+    let additional = JSON.parse(req.body.additionalParam)
+    let data = additional[0]
+    let transid = req.body.merchantOrderId
+    let status;
+    if(req.body.resultCode=="00"){
+        status = 'Y'
+    }else if(req.body.resultCode=="01"){
+        status = 'N'
+    }else{
+        status = 'P'
+    }
+    let statuss = status
+    let rkey = (Math.random() + 1).toString(36).substring(7);
+    let key = "WeEY0Qg4rEGe1jTvDiyoozyCx8vHl7ZQ";
 
+
+
+    // console.log(rkey, 'key');
+
+    // let checksums = data.checksum
+    let sellingamount = data.sellingcurrencyamount
+    let accountingamount = data.accountingcurrencyamount
+
+    let checksum = md5(transid+'|'+sellingamount+'|'+accountingamount+'|'+statuss+'|'+rkey+'|'+key);
+
+    console.log(checksum, 'cek')
+
+    var datas = JSON.stringify(
+        {
+            "transid":transid,
+            "status":statuss,
+            "rkey":rkey,
+            "checksum":checksum,
+            "sellingamount":sellingamount,
+            "accountingamount":accountingamount,
+         }
+    );
+
+    var config = {
+        method: 'post',
+        url: data.redirectUrl,
+        headers: { 
+            'Content-Type': 'application/json'
+        },
+        data : datas
+        };
+    
+        axios(config)
+        .then(function (response) {
+            console.log(response)
+            // console.log(JSON.stringify(response.data)); 
+            // console.log(response);
+            // res.send(JSON.stringify(response.data));
+            // res.redirect(response.data.paymentUrl)
+    
+        })
+        .catch(function (error) {
+            console.log(error);
+            res.send("Error");
+        });
+
+    res.send("OK");
 });
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
